@@ -12,18 +12,7 @@ services:
         - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
     ports:
         - "27017:27017"
-  mongo-express:
-    image: mongo-express
-    restart: always
-    ports:
-      - "8081:8081"
-    environment:
-      ME_CONFIG_MONGODB_ADMINUSERNAME: root
-      ME_CONFIG_MONGODB_ADMINPASSWORD: root
-      ME_CONFIG_MONGODB_SERVER: mongo
-    depends_on:
-      mongo:
-        condition: service_started
+
 #Order Service
   mysql:
     image: mysql
@@ -35,3 +24,25 @@ services:
       MYSQL_PASSWORD: order_service_user
     ports:
         - "3306:3306"
+
+#Inventory Service
+  postgres:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_DB: inventory_service_db
+      POSTGRES_USER: inventory_service_user
+      POSTGRES_PASSWORD: inventory_service_user
+    ports:
+        - "5432:5432"
+
+
+  pgadmin:
+    container_name: pgadmin4_container
+    image: dpage/pgadmin4
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: root
+    ports:
+      - "5050:80"
