@@ -1,21 +1,22 @@
 package com.santym.orderservice.service;
 
+import com.santym.orderservice.dto.InventoryResponse;
 import com.santym.orderservice.dto.OrderRequest;
+import com.santym.orderservice.exception.CreateOrderException;
 import com.santym.orderservice.model.Order;
 import com.santym.orderservice.model.OrderLineItems;
 import com.santym.orderservice.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.reactive.function.client.WebClient;
 
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class OrderService {
     private final OrderRepository orderRepository;
+    private final WebClient.Builder webClientBuilder;
 
     public void createOrder(OrderRequest orderRequest) {
         Order order = Order.builder()
@@ -29,6 +30,21 @@ public class OrderService {
                                         .build())
                                 .toList())
                 .build();
+
+        List<String> skuCodes = order.getOrderLineItemsList().stream()
+                .map(OrderLineItems::getSkuCode).toList();
+        InventoryResponse inventoryResponse = webClientBuilder.build().get()
+                .uri("http://inventory-service/api/v1/inventory",
+                        uriBuilder -> uriBuilder.queryParam("skuCode", skuCodes).build())
+                .retrieve()
+                .bodyToMono(InventoryResponse.class)
+                .block();
+
+        if(inventoryResponse == null ||
+                !inventoryResponse.getNotFound().isEmpty() ||
+                !inventoryResponse.getOutOfStock().isEmpty()) {
+            throw new CreateOrderException("Invalid inventory", inventoryResponse);
+        }
 
         orderRepository.save(order);
     }
