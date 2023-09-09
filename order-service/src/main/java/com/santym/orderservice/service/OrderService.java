@@ -2,11 +2,13 @@ package com.santym.orderservice.service;
 
 import com.santym.orderservice.dto.InventoryResponse;
 import com.santym.orderservice.dto.OrderRequest;
+import com.santym.orderservice.event.OrderCreatedEvent;
 import com.santym.orderservice.exception.CreateOrderException;
 import com.santym.orderservice.model.Order;
 import com.santym.orderservice.model.OrderLineItems;
 import com.santym.orderservice.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -17,6 +19,7 @@ import java.util.*;
 public class OrderService {
     private final OrderRepository orderRepository;
     private final WebClient.Builder webClientBuilder;
+    private final KafkaTemplate<String, OrderCreatedEvent> kafkaTemplate;
 
     public void createOrder(OrderRequest orderRequest) {
         Order order = Order.builder()
@@ -47,6 +50,8 @@ public class OrderService {
         }
 
         orderRepository.save(order);
+        kafkaTemplate.send("inventory-topic",
+                new OrderCreatedEvent(order.getOrderNumber(), orderRequest.getOrderLineItemsList()));
     }
 
     public List<Order> getOrders() {
