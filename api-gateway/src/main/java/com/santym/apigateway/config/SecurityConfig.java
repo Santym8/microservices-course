@@ -16,6 +16,7 @@ public class SecurityConfig {
         return http
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .authorizeExchange(authorizeExchangeSpec -> authorizeExchangeSpec
+                        .pathMatchers("/api/v1/auth/**").permitAll()
                         .pathMatchers("/eureka/**").permitAll()
                         .pathMatchers("/message/**").hasAuthority("SCOPE_message:read")
                         .anyExchange().authenticated())

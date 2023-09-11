@@ -16,7 +16,7 @@ public class NotificationServiceApplication {
 
 	@KafkaListener(id = "myId", topics = "inventory-topic")
 	public void listen(OrderCreatedEvent message) {
-		log.info(message.toString());
+		log.debug(message.toString());
 	}
 
 }
